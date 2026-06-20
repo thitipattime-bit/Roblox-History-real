@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Active WebSocket / Vite HMR unhandled rejection suppressor.
+      // Helps avoid unhandled rejection screens in restricted proxy/iframe environments.
+      (function() {
+        var isWebsocketError = function(errAny) {
+          if (!errAny) return false;
+          var message = String(errAny.message || errAny.reason?.message || errAny.reason || errAny).toLowerCase();
+          return (
+            message.indexOf('websocket') !== -1 ||
+            message.indexOf('ws://') !== -1 ||
+            message.indexOf('wss://') !== -1 ||
+            message.indexOf('vite') !== -1
+          );
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (isWebsocketError(event.reason) || isWebsocketError(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+
+        window.addEventListener('error', function(event) {
+          if (isWebsocketError(event.message) || isWebsocketError(event.error)) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

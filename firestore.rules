@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (default-deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Primitive Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // ----------------------------------------------------
+    // COLLECTION: users
+    // ----------------------------------------------------
+    function isValidUser(data) {
+      return data.username is string && data.username.size() >= 3 && data.username.size() <= 50
+        && data.avatarType is string && data.avatarType.size() <= 100
+        && data.avatarColor is string && data.avatarColor.size() <= 150
+        && data.joinedDate is string && data.joinedDate.size() <= 50
+        && data.simulatedRobux is int && data.simulatedRobux >= 0;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn(); // Each query should filter securely
+
+      allow create: if (
+        isSignedIn() && isOwner(userId) && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().keys().hasAll(['username', 'avatarType', 'avatarColor', 'joinedDate', 'simulatedRobux', 'createdAt', 'updatedAt'])
+        && incoming().keys().size() == 7
+      );
+
+      allow update: if (
+        isSignedIn() && isOwner(userId) && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['simulatedRobux', 'updatedAt'])
+      );
+      
+      allow delete: if false; // Profiles are permanent historical data nodes
+    }
+
+    // ----------------------------------------------------
+    // COLLECTION: quiz_scores
+    // ----------------------------------------------------
+    function isValidQuizScore(data) {
+      return data.uid is string && data.uid == request.auth.uid
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 50
+        && data.score is int && data.score >= 0 && data.score <= 100
+        && data.totalQuestions is int && data.totalQuestions >= 0 && data.totalQuestions <= 100;
+    }
+
+    match /quiz_scores/{scoreId} {
+      allow get: if isSignedIn() && isValidId(scoreId);
+      allow list: if isSignedIn(); // Each user retrieves their own or global stats
+
+      allow create: if (
+        isSignedIn() && isValidId(scoreId)
+        && isValidQuizScore(incoming())
+        && incoming().completedAt == request.time
+        && incoming().keys().hasAll(['uid', 'username', 'score', 'totalQuestions', 'completedAt'])
+        && incoming().keys().size() == 5
+      );
+
+      allow update, delete: if false; // Quiz scores are historical immortal logs
+    }
+
+    // ----------------------------------------------------
+    // COLLECTION: test (Self-connection validation)
+    // ----------------------------------------------------
+    match /test/{docId} {
+      allow get: if true;
+    }
+  }
+}

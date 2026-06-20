@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Simulated Roblox profile credential details linked to a secure Google login.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Custom chosen Roblox handle."
+        },
+        "avatarType": {
+          "type": "string",
+          "description": "Selected avatar rig archetype."
+        },
+        "avatarColor": {
+          "type": "string",
+          "description": "Tailwind color gradient classes for avatar background."
+        },
+        "joinedDate": {
+          "type": "string",
+          "description": "Account establishment date string."
+        },
+        "simulatedRobux": {
+          "type": "integer",
+          "description": "Simulated economy balance."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile record creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile record update timestamp."
+        }
+      },
+      "required": ["username", "avatarType", "avatarColor", "joinedDate", "simulatedRobux"]
+    },
+    "QuizScore": {
+      "title": "QuizScore",
+      "description": "History trivia score records for comparison.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The Google User ID."
+        },
+        "username": {
+          "type": "string",
+          "description": "Roblox username at the time of completion."
+        },
+        "score": {
+          "type": "integer",
+          "description": "Number of correct answers."
+        },
+        "totalQuestions": {
+          "type": "integer",
+          "description": "Total trivia questions answered."
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Completion timestamp."
+        }
+      },
+      "required": ["uid", "username", "score", "totalQuestions", "completedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of registered user accounts and cumulative balances."
+    },
+    "quiz_scores/{scoreId}": {
+      "schema": "QuizScore",
+      "description": "Aggregated educational history trivia completion scores."
+    }
+  }
+}
